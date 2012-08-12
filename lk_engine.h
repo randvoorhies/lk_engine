@@ -13,8 +13,8 @@ namespace rcv
       LKEngine();
       void updateImage(cv::Mat const image);
       void track(std::vector<cv::Point2f> const & prev_points,
-          std::vector<cv::Point2f> & curr_points, std::vector<char> & status, std::vector<float> & error,
-          CvSize win_size);
+          std::vector<cv::Point2f> & curr_points, std::vector<char> & status, std::vector<float> & error);
+      void trackAndFilter(std::vector<cv::Point2f> & prev_points, std::vector<cv::Point2f> & curr_points);
 
     private:
       void allocate();
@@ -23,14 +23,15 @@ namespace rcv
       cv::Mat prev_image_;
       boost::shared_ptr<CvArr> prev_pyramid_;
       boost::shared_ptr<CvArr> curr_pyramid_;
+      CvSize win_size_;
       int level_;
-
       int flags_;
   };
 }
 
 // ######################################################################
 rcv::LKEngine::LKEngine() :
+  win_size_(cvSize(15,15)),
   level_(1),
   flags_(0)
 { }
@@ -67,8 +68,7 @@ void rcv::LKEngine::allocate()
 
 // ######################################################################
 void rcv::LKEngine::track(std::vector<cv::Point2f> const & prev_points,
-    std::vector<cv::Point2f> & curr_points, std::vector<char> & status, std::vector<float> & error,
-    CvSize win_size)
+    std::vector<cv::Point2f> & curr_points, std::vector<char> & status, std::vector<float> & error)
 {
   curr_points.resize(prev_points.size());
   status.resize(prev_points.size());
@@ -85,8 +85,30 @@ void rcv::LKEngine::track(std::vector<cv::Point2f> const & prev_points,
 
   cvCalcOpticalFlowPyrLK(&prev_ipl, &curr_ipl, prev_pyramid_.get(), curr_pyramid_.get(),
       prev_points_arr, curr_points_arr, prev_points.size(),
-      win_size, level_, &status[0], &error[0], term_criteria, flags_);
+      win_size_, level_, &status[0], &error[0], term_criteria, flags_);
 
   flags_ |= CV_LKFLOW_PYR_A_READY;
   flags_ |= CV_LKFLOW_PYR_B_READY;
 }
+
+// ######################################################################
+void rcv::LKEngine::trackAndFilter(std::vector<cv::Point2f> & prev_points, std::vector<cv::Point2f> & curr_points)
+{
+  std::vector<char> status;
+  std::vector<float> error;
+  track(prev_points, curr_points, status, error);
+
+  std::vector<cv::Point2f> prev_points_filt;
+  std::vector<cv::Point2f> curr_points_filt;
+  for(size_t i=0; i<prev_points.size(); ++i)
+  {
+    if(status[i])
+    {
+      prev_points_filt.push_back(prev_points[i]);
+      curr_points_filt.push_back(curr_points[i]);
+    }
+  }
+  prev_points = std::move(prev_points_filt);
+  curr_points = std::move(curr_points_filt);
+}
+
