@@ -25,9 +25,6 @@ int main(int argc, char** argv)
     lk.updateImage(image_bw);
 
     std::vector<cv::Point2f> curr_points;
-    std::vector<char> status;
-    std::vector<float> error;
-    CvSize win_size = cvSize(15,15);
 
     lk.trackAndFilter(prev_points, curr_points);
 

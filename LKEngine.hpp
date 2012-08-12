@@ -12,9 +12,12 @@ namespace rcv
   {
     public:
       LKEngine();
+
       void updateImage(cv::Mat const image);
+
       void track(std::vector<cv::Point2f> const & prev_points,
           std::vector<cv::Point2f> & curr_points, std::vector<char> & status, std::vector<float> & error);
+
       void trackAndFilter(std::vector<cv::Point2f> & prev_points, std::vector<cv::Point2f> & curr_points);
 
     private:
