@@ -13,6 +13,6 @@ target_link_libraries(lk_engine ${OPENCV_LIBRARIES})
 
 include_directories(.)
 
-add_definitions(-std=c++0x)
+add_definitions(-std=c++0x -g)
 
 
